@@ -3,6 +3,7 @@
  */
 package com.lightbend.training.coffeehouse;
 
+import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.event.Logging;
@@ -35,6 +36,7 @@ public class CoffeeHouseApp implements Terminal {
         this.system = system;
         log = Logging.getLogger(system, getClass().getName());
         coffeeHouse = createCoffeeHouse();
+        coffeeHouse.tell("Brew Coffee", ActorRef.noSender());
     }
 
     public static void main(final String[] args) throws Exception {

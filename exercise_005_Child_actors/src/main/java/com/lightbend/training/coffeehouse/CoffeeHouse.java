@@ -15,11 +15,19 @@ public class CoffeeHouse extends AbstractLoggingActor {
 
     @Override
     public Receive createReceive() {
-        return receiveBuilder().
-            matchAny(o -> getSender().tell("Coffee is really really Brewing and it is hot", getSelf())).build();
+        return receiveBuilder().match(CreateGuest.class, createGuest -> createGuest()).build();
     }
 
     public static Props props() {
         return Props.create(CoffeeHouse.class, CoffeeHouse::new);
+    }
+
+    protected void createGuest() {
+        getContext().actorOf(Guest.props());
+    }
+
+    public static final class CreateGuest {
+        public static final CreateGuest Instance = new CreateGuest();
+        private CreateGuest() {}
     }
 }

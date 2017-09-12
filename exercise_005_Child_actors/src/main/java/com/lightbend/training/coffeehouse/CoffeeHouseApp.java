@@ -37,7 +37,6 @@ public class CoffeeHouseApp implements Terminal {
         this.system = system;
         log = Logging.getLogger(system, getClass().getName());
         coffeeHouse = createCoffeeHouse();
-        system.actorOf(printerProps(coffeeHouse));
     }
 
     public static void main(final String[] args) throws Exception {
@@ -62,19 +61,6 @@ public class CoffeeHouseApp implements Terminal {
     public static void applySystemProperties(final Map<String, String> opts) {
         opts.forEach((key, value) -> {
             if (key.startsWith("-D")) System.setProperty(key.substring(2), value);
-        });
-    }
-
-    private static Props printerProps(ActorRef coffeeHouse) {
-        return Props.create(AbstractLoggingActor.class, () -> new AbstractLoggingActor() {
-            @Override
-            public Receive createReceive() {
-                return receiveBuilder().matchAny(o -> log().info(o.toString())).build();
-            }
-
-            {
-                coffeeHouse.tell("Brew Coffee", getSelf());
-            }
         });
     }
 
@@ -111,6 +97,9 @@ public class CoffeeHouseApp implements Terminal {
     }
 
     protected void createGuest(int count, Coffee coffee, int maxCoffeeCount) {
+        for (int i = 0; i < count; i++) {
+            coffeeHouse.tell(CoffeeHouse.CreateGuest.Instance, ActorRef.noSender());
+        }
     }
 
     protected void getStatus() {

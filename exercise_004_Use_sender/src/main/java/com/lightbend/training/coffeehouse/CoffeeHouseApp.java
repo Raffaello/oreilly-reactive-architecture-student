@@ -3,10 +3,7 @@
  */
 package com.lightbend.training.coffeehouse;
 
-import akka.actor.AbstractLoggingActor;
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.Props;
+import akka.actor.*;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import scala.concurrent.Await;
@@ -37,6 +34,7 @@ public class CoffeeHouseApp implements Terminal {
         this.system = system;
         log = Logging.getLogger(system, getClass().getName());
         coffeeHouse = createCoffeeHouse();
+        system.actorOf(printerProps(coffeeHouse));
     }
 
     public static void main(final String[] args) throws Exception {
@@ -94,6 +92,19 @@ public class CoffeeHouseApp implements Terminal {
                 log.warning("Unknown terminal command {}!", u.command);
             }
         }
+    }
+
+    private static Props printerProps(ActorRef coffeeHouse) {
+        return Props.create(AbstractLoggingActor.class, () -> new AbstractLoggingActor() {
+            @Override
+            public Receive createReceive() {
+                return receiveBuilder().matchAny(o -> log().info(o.toString())).build();
+            }
+
+            {
+                coffeeHouse.tell("Brew Coffee", getSelf());
+            }
+        } );
     }
 
     protected void createGuest(int count, Coffee coffee, int maxCoffeeCount) {

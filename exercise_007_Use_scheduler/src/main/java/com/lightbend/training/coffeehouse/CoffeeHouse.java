@@ -7,8 +7,11 @@ package com.lightbend.training.coffeehouse;
 import akka.actor.AbstractLoggingActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import scala.concurrent.duration.Duration;
+import scala.concurrent.duration.FiniteDuration;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class CoffeeHouse extends AbstractLoggingActor {
 
@@ -17,6 +20,11 @@ public class CoffeeHouse extends AbstractLoggingActor {
     public CoffeeHouse() {
         log().debug("CoffeeHouse Open");
     }
+
+    private final FiniteDuration guestFinishCoffeeDuration =
+            Duration.create(
+                    context().system().settings().config().getDuration(
+                            "coffee-house.guest.finish-coffee-duration", MILLISECONDS), MILLISECONDS);
 
     @Override
     public Receive createReceive() {
@@ -33,9 +41,9 @@ public class CoffeeHouse extends AbstractLoggingActor {
     }
 
     protected void createGuest(Coffee favoriteCoffee) {
-        getContext().actorOf(Guest.props(waiter, favoriteCoffee));
+        context().actorOf(Guest.props(waiter, favoriteCoffee, guestFinishCoffeeDuration));
     }
-    
+
     public static final class CreateGuest {
 
         public final Coffee favoriteCoffee;
