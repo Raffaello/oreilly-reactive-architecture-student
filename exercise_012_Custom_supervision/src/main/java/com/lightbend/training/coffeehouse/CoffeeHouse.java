@@ -4,10 +4,8 @@
 
 package com.lightbend.training.coffeehouse;
 
-import akka.actor.AbstractLoggingActor;
-import akka.actor.ActorRef;
-import akka.actor.Props;
-import akka.actor.Terminated;
+import akka.actor.*;
+import akka.japi.pf.DeciderBuilder;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -39,6 +37,11 @@ public class CoffeeHouse extends AbstractLoggingActor {
 
     private final int caffeineLimit;
 
+    private SupervisorStrategy strategy = new OneForOneStrategy(false, DeciderBuilder
+            .match(Guest.CaffeineException.class, e -> SupervisorStrategy.stop())
+            .matchAny(e -> SupervisorStrategy.restart())
+            .build());
+
     public CoffeeHouse(int caffeineLimit) {
         log().debug("CoffeeHouse Open");
         this.caffeineLimit = caffeineLimit;
@@ -67,6 +70,11 @@ public class CoffeeHouse extends AbstractLoggingActor {
 
     public static Props props(int caffeineLimit) {
         return Props.create(CoffeeHouse.class, () -> new CoffeeHouse(caffeineLimit));
+    }
+
+    @Override
+    public SupervisorStrategy supervisorStrategy() {
+        return strategy;
     }
 
     private boolean coffeeApproved(ApproveCoffee approveCoffee) {

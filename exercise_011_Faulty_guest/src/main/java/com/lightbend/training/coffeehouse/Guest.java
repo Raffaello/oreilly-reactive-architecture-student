@@ -19,10 +19,13 @@ public class Guest extends AbstractLoggingActor {
 
     private int coffeeCount = 0;
 
-    public Guest(ActorRef waiter, Coffee favoriteCoffee, FiniteDuration finishCoffeeDuration) {
+    private final int caffeineLimit;
+
+    public Guest(ActorRef waiter, Coffee favoriteCoffee, FiniteDuration finishCoffeeDuration, int caffeineLimit) {
         this.waiter = waiter;
         this.favoriteCoffee = favoriteCoffee;
         this.finishCoffeeDuration = finishCoffeeDuration;
+        this.caffeineLimit = caffeineLimit;
         orderFavoriteCoffee();
     }
 
@@ -33,14 +36,20 @@ public class Guest extends AbstractLoggingActor {
                     coffeeCount++;
                     log().info("Enjoying my {} yummy {}!", coffeeCount, coffeeServed.coffee);
                     scheduleCoffeeFinished();
-                }).
-                match(CoffeeFinished.class, coffeeFinished ->
+                })
+                .match(CoffeeFinished.class, coffeeFinished -> coffeeCount > this.caffeineLimit, coffeeFinished -> {
+                    throw new CaffeineException();
+                })
+                .match(CoffeeFinished.class, coffeeFinished ->
                         orderFavoriteCoffee()
-                ).build();
+                )
+                .build();
     }
 
-    public static Props props(final ActorRef waiter, final Coffee favoriteCoffee, FiniteDuration finishCoffeeDuration) {
-        return Props.create(Guest.class, () -> new Guest(waiter, favoriteCoffee, finishCoffeeDuration));
+    public static Props props(final ActorRef waiter, final Coffee favoriteCoffee,
+                              final FiniteDuration finishCoffeeDuration, final int caffeineLimit) {
+        return Props.create(Guest.class,
+                () -> new Guest(waiter, favoriteCoffee, finishCoffeeDuration, caffeineLimit));
     }
 
     @Override
@@ -63,6 +72,14 @@ public class Guest extends AbstractLoggingActor {
                 new CoffeeFinished();
 
         private CoffeeFinished() {
+        }
+    }
+
+    public static final class CaffeineException extends IllegalStateException {
+        static final long serialVersionUID = 1;
+
+        public CaffeineException() {
+            super("Too much caffeine!");
         }
     }
 }

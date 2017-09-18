@@ -7,6 +7,7 @@ package com.lightbend.training.coffeehouse;
 import akka.actor.AbstractLoggingActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.actor.Terminated;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -51,6 +52,7 @@ public class CoffeeHouse extends AbstractLoggingActor {
                 match(CreateGuest.class, createGuest -> {
                     final ActorRef guest = createGuest(createGuest.favoriteCoffee);
                     addGuestToBookkeeper(guest);
+                    context().watch(guest);
                 }).
                 match(ApproveCoffee.class, this::coffeeApproved, approveCoffee -> {
                     barista.forward(new Barista.PrepareCoffee(approveCoffee.coffee, approveCoffee.guest), context());
@@ -59,7 +61,12 @@ public class CoffeeHouse extends AbstractLoggingActor {
                 match(ApproveCoffee.class, approveCoffee -> {
                     log().info("Sorry, {}, but you have reached your limit.", approveCoffee.guest.path().name());
                     getContext().stop(approveCoffee.guest);
-                }).build();
+                })
+                .match(Terminated.class, terminated -> {
+                    log().info("Thanks, {}, for being our guest!", terminated.getActor());
+                    removeGuestFromBookkeeper(terminated.getActor());
+                })
+                .build();
     }
 
     public static Props props(int caffeineLimit) {
@@ -80,6 +87,11 @@ public class CoffeeHouse extends AbstractLoggingActor {
         log().debug("Guest {} added to bookkeeper", guest);
     }
 
+    private void removeGuestFromBookkeeper(ActorRef guest) {
+        guestCaffeineBookkeeper.remove(guest);
+        log().debug("Removed guest {} from bookkeeper", guest);
+    }
+
     protected ActorRef createBarista() {
         return getContext().actorOf(Barista.props(baristaPrepareCoffeeDuration), "barista");
     }
@@ -87,7 +99,6 @@ public class CoffeeHouse extends AbstractLoggingActor {
     protected ActorRef createWaiter() {
         return getContext().actorOf(Waiter.props(getSelf()), "waiter");
     }
-
     protected ActorRef createGuest(Coffee favoriteCoffee) {
         return getContext().actorOf(Guest.props(waiter, favoriteCoffee, guestFinishCoffeeDuration));
     }

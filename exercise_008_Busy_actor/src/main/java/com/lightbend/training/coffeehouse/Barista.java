@@ -9,19 +9,14 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import scala.concurrent.duration.FiniteDuration;
 
-import java.util.Random;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class Barista extends AbstractLoggingActor {
 
     private final FiniteDuration prepareCoffeeDuration;
 
-    private final int accuracy;
-
-    public Barista(FiniteDuration prepareCoffeeDuration, int accuracy) {
+    public Barista(FiniteDuration prepareCoffeeDuration) {
         this.prepareCoffeeDuration = prepareCoffeeDuration;
-        this.accuracy = accuracy;
     }
 
     @Override
@@ -29,16 +24,12 @@ public class Barista extends AbstractLoggingActor {
         return receiveBuilder().
                 match(PrepareCoffee.class, prepareCoffee -> {
                     Thread.sleep(this.prepareCoffeeDuration.toMillis()); // Attention: Never block a thread in "real" code!
-                    getSender().tell(new CoffeePrepared(pickCoffee(prepareCoffee.coffee), prepareCoffee.guest), getSelf());
+                    sender().tell(new CoffeePrepared(prepareCoffee.coffee, prepareCoffee.guest), self());
                 }).build();
     }
 
-    public static Props props(FiniteDuration prepareCoffeeDuration, int accuracy) {
-        return Props.create(Barista.class, () -> new Barista(prepareCoffeeDuration, accuracy));
-    }
-
-    private Coffee pickCoffee(Coffee coffee) {
-        return new Random().nextInt(100) < accuracy ? coffee : Coffee.orderOther(coffee);
+    public static Props props(FiniteDuration prepareCoffeeDuration) {
+        return Props.create(Barista.class, () -> new Barista(prepareCoffeeDuration));
     }
 
     public static final class PrepareCoffee {

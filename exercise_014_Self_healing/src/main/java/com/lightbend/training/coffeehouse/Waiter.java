@@ -36,7 +36,7 @@ public class Waiter extends AbstractLoggingActor {
                         coffeePrepared.guest.tell(new CoffeeServed(coffeePrepared.coffee), self())
                 ).
                 match(Complaint.class, complaint -> complaintCount == this.maxComplaintCount, complaint -> {
-                    throw new FrustratedException();
+                    throw new FrustratedException(complaint.coffee, sender());
                 }).
                 match(Complaint.class, complaint -> {
                     complaintCount++;
@@ -51,8 +51,13 @@ public class Waiter extends AbstractLoggingActor {
     public static final class FrustratedException extends IllegalStateException {
         static final long serialVersionUID = 1;
 
-        public FrustratedException() {
+        public final Coffee coffee;
+        public final ActorRef guest;
+
+        public FrustratedException(Coffee coffee, ActorRef guest) {
             super("Too many complaints!");
+            this.coffee = coffee;
+            this.guest = guest;
         }
     }
 

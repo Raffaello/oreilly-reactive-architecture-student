@@ -12,27 +12,26 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class Waiter extends AbstractLoggingActor {
 
-    private ActorRef barista;
+    private ActorRef coffeeHouse;
 
-    public Waiter(ActorRef barista) {
-        this.barista = barista;
+    public Waiter(ActorRef coffeeHouse) {
+        this.coffeeHouse = coffeeHouse;
     }
 
     @Override
     public Receive createReceive() {
         return receiveBuilder().
                 match(ServeCoffee.class, serveCoffee ->
-                        this.barista.tell(new Barista.PrepareCoffee(serveCoffee.coffee, sender()), self())
+                        this.coffeeHouse.tell(new CoffeeHouse.ApproveCoffee(serveCoffee.coffee, sender()), self())
                 ).
                 match(Barista.CoffeePrepared.class, coffeePrepared ->
                         coffeePrepared.guest.tell(new CoffeeServed(coffeePrepared.coffee), self())
                 ).build();
     }
 
-    public static Props props(ActorRef barista) {
-        return Props.create(Waiter.class, () -> new Waiter(barista));
+    public static Props props(ActorRef coffeeHouse) {
+        return Props.create(Waiter.class, () -> new Waiter(coffeeHouse));
     }
-
     public static final class ServeCoffee {
 
         public final Coffee coffee;

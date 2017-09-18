@@ -26,6 +26,7 @@ public class Guest extends AbstractLoggingActor {
         this.favoriteCoffee = favoriteCoffee;
         this.finishCoffeeDuration = finishCoffeeDuration;
         this.caffeineLimit = caffeineLimit;
+        log().debug("Guest caffe lim: {}", this.caffeineLimit);
         orderFavoriteCoffee();
     }
 
@@ -38,6 +39,7 @@ public class Guest extends AbstractLoggingActor {
                     scheduleCoffeeFinished();
                 }).
                 match(CoffeeFinished.class, coffeeFinished -> coffeeCount > this.caffeineLimit, coffeeFinished -> {
+                    log().debug("coffeFinished: count {} --- limit {}", coffeeCount, this.caffeineLimit);
                     throw new CaffeineException();
                 }).
                 match(CoffeeFinished.class, coffeeFinished ->

@@ -15,13 +15,21 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class CoffeeHouse extends AbstractLoggingActor {
 
+    private final FiniteDuration baristaPrepareCoffeeDuration =
+            Duration.create(
+                    context().system().settings().config().getDuration(
+                            "coffee-house.barista.prepare-coffee-duration", MILLISECONDS), MILLISECONDS);
+
     private final FiniteDuration guestFinishCoffeeDuration =
             Duration.create(
                     context().system().settings().config().getDuration(
                             "coffee-house.guest.finish-coffee-duration", MILLISECONDS), MILLISECONDS);
 
-    private final ActorRef waiter =
-            context().actorOf(Waiter.props(), "waiter");
+    private final ActorRef barista = createBarista();
+
+    private final ActorRef waiter = createWaiter();
+
+
 
     public CoffeeHouse() {
         log().debug("CoffeeHouse Open");
@@ -41,6 +49,14 @@ public class CoffeeHouse extends AbstractLoggingActor {
 
     protected void createGuest(Coffee favoriteCoffee) {
         context().actorOf(Guest.props(waiter, favoriteCoffee, guestFinishCoffeeDuration));
+    }
+
+    protected ActorRef createWaiter() {
+        return context().actorOf(Waiter.props(barista), "waiter");
+    }
+
+    protected ActorRef createBarista() {
+        return context().actorOf(Barista.props(baristaPrepareCoffeeDuration), "barista");
     }
 
     public static final class CreateGuest {

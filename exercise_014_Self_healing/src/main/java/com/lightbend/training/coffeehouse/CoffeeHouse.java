@@ -43,9 +43,16 @@ public class CoffeeHouse extends AbstractLoggingActor {
 
     private final int caffeineLimit;
 
-    private SupervisorStrategy strategy = new OneForOneStrategy(false, DeciderBuilder.
-            match(Guest.CaffeineException.class, e -> SupervisorStrategy.stop()).
-            matchAny(e -> SupervisorStrategy.restart()).build());
+    private SupervisorStrategy strategy = new OneForOneStrategy(false, DeciderBuilder
+            .match(Guest.CaffeineException.class, e -> SupervisorStrategy.stop())
+            .match(Waiter.FrustratedException.class, (Waiter.FrustratedException e) -> {
+
+                log().debug("frustration fwd to barista");
+                barista.tell(new Barista.PrepareCoffee(e.coffee, e.guest), getSender());
+
+                return SupervisorStrategy.restart();
+            })
+            .matchAny(e -> SupervisorStrategy.restart()).build());
 
     public CoffeeHouse(int caffeineLimit) {
         log().debug("CoffeeHouse Open");

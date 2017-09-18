@@ -6,6 +6,7 @@ package com.lightbend.training.coffeehouse;
 
 import akka.actor.*;
 import akka.japi.pf.DeciderBuilder;
+import akka.routing.FromConfig;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -109,7 +110,11 @@ public class CoffeeHouse extends AbstractLoggingActor {
     }
 
     protected ActorRef createBarista() {
-        return context().actorOf(Barista.props(baristaPrepareCoffeeDuration, baristaAccuracy), "barista");
+//        return context().actorOf(Barista.props(baristaPrepareCoffeeDuration, baristaAccuracy), "barista");
+        return getContext().actorOf(FromConfig.getInstance().props(
+                Barista.props(baristaPrepareCoffeeDuration, baristaAccuracy)),
+                "barista"
+        );
     }
 
     protected ActorRef createWaiter() {

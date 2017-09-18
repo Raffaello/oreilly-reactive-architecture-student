@@ -43,6 +43,11 @@ public class Guest extends AbstractLoggingActor {
         return Props.create(Guest.class, () -> new Guest(waiter, favoriteCoffee, finishCoffeeDuration));
     }
 
+    @Override
+    public void postStop() {
+        log().info("Goodbye!");
+    }
+
     private void orderFavoriteCoffee() {
         waiter.tell(new Waiter.ServeCoffee(favoriteCoffee), self());
     }

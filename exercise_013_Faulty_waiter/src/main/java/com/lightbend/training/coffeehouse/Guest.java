@@ -32,10 +32,14 @@ public class Guest extends AbstractLoggingActor {
     @Override
     public Receive createReceive() {
         return receiveBuilder().
-                match(Waiter.CoffeeServed.class, coffeeServed -> {
+                match(Waiter.CoffeeServed.class, coffeeServed -> coffeeServed.coffee.equals(favoriteCoffee), coffeeServed -> {
                     coffeeCount++;
                     log().info("Enjoying my {} yummy {}!", coffeeCount, coffeeServed.coffee);
                     scheduleCoffeeFinished();
+                }).
+                match(Waiter.CoffeeServed.class, coffeeServed -> {
+                    log().info("Expected a {}, but got a {}!", favoriteCoffee, coffeeServed.coffee);
+                    waiter.tell(new Waiter.Complaint(favoriteCoffee), self());
                 }).
                 match(CoffeeFinished.class, coffeeFinished -> coffeeCount > this.caffeineLimit, coffeeFinished -> {
                     throw new CaffeineException();
